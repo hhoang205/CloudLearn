@@ -1,0 +1,46 @@
+flowchart TD
+    A[Trang chủ] --> B[Đăng nhập / Đăng ký]
+    B --> C{Kiểm tra dữ liệu}
+
+    C -->|Thiếu trường bắt buộc| C1[Hiển thị lỗi bắt buộc]
+    C -->|Email không hợp lệ| C2[Hiển thị lỗi định dạng email]
+    C -->|Mật khẩu quá ngắn| C3[Hiển thị yêu cầu độ dài mật khẩu]
+    C -->|Mật khẩu xác nhận không khớp| C4[Hiển thị lỗi xác nhận mật khẩu]
+
+    C1 --> B
+    C2 --> B
+    C3 --> B
+    C4 --> B
+
+    C -->|Dữ liệu hợp lệ| D{Gửi yêu cầu xác thực mẫu}
+    B --> S[Nút Google / GitHub]
+    S --> D
+
+    D -->|Thất bại| E[Hiển thị thông báo lỗi]
+    E --> B
+
+    D -->|Thành công| F[Bảng điều khiển tài khoản]
+    F --> G[Quản lý hồ sơ]
+    G --> G1[Chỉnh sửa biểu mẫu hồ sơ]
+    G1 --> G2[Lưu thay đổi hồ sơ]
+
+    F --> H[Trạng thái dung lượng]
+    H --> H1[Hiển thị đã dùng 2GB / 5GB]
+    H1 --> H2[Hiển thị tổng số tài liệu và thư mục]
+
+    F --> I[Quản lý tài liệu]
+    I --> I1[Chọn file và nhập metadata môn học]
+    I1 --> I2[Tạo presigned URL từ backend]
+    I2 --> I3[Upload trực tiếp lên AWS S3]
+    I3 --> I4[Lưu metadata và S3 key]
+
+    F --> CLC[Thiết kế cloud AWS]
+    CLC --> CLC1[S3 bucket tại ap-southeast-1]
+    CLC --> CLC2[Mã hóa SSE-S3 và versioning]
+    CLC --> CLC3[Lifecycle chuyển file ít dùng sang Standard-IA]
+
+    F --> J[Cài đặt và đổi mật khẩu]
+    J --> J1[Kiểm tra biểu mẫu đổi mật khẩu]
+
+    F --> K[Đăng xuất]
+    K --> A
