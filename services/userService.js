@@ -10,7 +10,7 @@ export function normalizeUser(user) {
   return {
     ...user,
     fullName: user.fullName || user.full_name || user.email || "Người dùng",
-    avatarUrl: user.avatarUrl || user.avatar_url || "",
+    avatarUrl: user.avatar_url || user.avatarUrl || "",
     storageUsedGB: user.storageUsedGB ?? user.storage_used_gb ?? 0,
     storageLimitGB: user.storageLimitGB ?? user.storage_limit_gb ?? 2,
   };
@@ -24,7 +24,6 @@ export function setCurrentUser(user) {
  * Lấy thông tin người dùng hiện tại
  */
 export async function getCurrentUser() {
-
   if (currentUser) {
     return currentUser;
   }
@@ -61,6 +60,7 @@ export async function getCurrentUser() {
   if (error) {
     throw new Error(error.message);
   }
+  console.log("Fetched user profile:", data);
 
   currentUser = normalizeUser(data);
 
@@ -71,7 +71,6 @@ export async function getCurrentUser() {
  * Cập nhật hồ sơ
  */
 export async function updateProfile(updates) {
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -83,7 +82,6 @@ export async function updateProfile(updates) {
   const { data, error } = await supabase
     .from("profiles")
     .update({
-
       full_name: updates.fullName,
 
       email: updates.email,
@@ -91,16 +89,15 @@ export async function updateProfile(updates) {
       role: updates.role,
 
       institution: updates.institution,
-
+      avatar_url: updates.avatar_url || updates.avatarUrl,
     })
-    .eq("id", user.id)
+    .eq("id", updates.id || user.id)
     .select()
     .single();
 
   if (error) {
     throw new Error(error.message);
   }
-
   currentUser = normalizeUser(data);
 
   return currentUser;
@@ -109,19 +106,13 @@ export async function updateProfile(updates) {
 /**
  * Đổi mật khẩu
  */
-export async function changePassword({
-  currentPassword,
-  newPassword,
-}) {
-
+export async function changePassword({ currentPassword, newPassword }) {
   if (!newPassword) {
     throw new Error("Vui lòng nhập mật khẩu mới.");
   }
 
   const { error } = await supabase.auth.updateUser({
-
     password: newPassword,
-
   });
 
   if (error) {

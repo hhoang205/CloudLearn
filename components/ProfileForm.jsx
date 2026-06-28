@@ -7,6 +7,8 @@ import { useAuth } from "@/context/AuthContext";
 import { validateProfile } from "@/lib/validation";
 import FormInput from "./FormInput";
 
+import { supabase } from "@/lib/supabase";
+
 const MAX_AVATAR_SIZE_MB = 2;
 const MAX_AVATAR_SIZE_BYTES = MAX_AVATAR_SIZE_MB * 1024 * 1024;
 
@@ -23,6 +25,7 @@ export default function ProfileForm() {
   const [status, setStatus] = useState("");
   const [isSaving, setSaving] = useState(false);
   const [avatarError, setAvatarError] = useState("");
+  const [avatarFile, setAvatarFile] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -53,13 +56,19 @@ export default function ProfileForm() {
     }
 
     if (file.size > MAX_AVATAR_SIZE_BYTES) {
-      setAvatarError(`Ảnh đại diện không được vượt quá ${MAX_AVATAR_SIZE_MB}MB.`);
+      setAvatarError(
+        `Ảnh đại diện không được vượt quá ${MAX_AVATAR_SIZE_MB}MB.`,
+      );
       return;
     }
 
     const reader = new FileReader();
     reader.onload = () => {
-      setValues((current) => ({ ...current, avatarUrl: String(reader.result) }));
+      setValues((current) => ({
+        ...current,
+        avatarUrl: String(reader.result),
+      }));
+      setAvatarFile(file);
       setAvatarError("");
       setStatus("Ảnh đại diện đã sẵn sàng. Nhấn lưu để cập nhật.");
     };
@@ -80,9 +89,40 @@ export default function ProfileForm() {
 
     try {
       setSaving(true);
-      setStatus("");
-      await updateProfile(values);
-      setStatus("Đã lưu hồ sơ.");
+      setStatus("Đang lưu thay đổi...");
+
+      let finalAvatarUrl = values.avatarUrl;
+
+      if (avatarFile) {
+        const fileExt = avatarFile.name.split(".").pop();
+        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(filePath, avatarFile, { upsert: true });
+
+        if (uploadError) {
+          throw new Error("Lỗi khi tải ảnh lên Cloud. Vui lòng thử lại.");
+          // console.error("Chi tiết lỗi upload:", uploadError);
+          // throw new Error(`Lỗi Storage: ${uploadError.message}`);
+        }
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("avatars").getPublicUrl(filePath);
+
+        finalAvatarUrl = publicUrl;
+      }
+
+      const finalValues = { ...values, avatarUrl: finalAvatarUrl };
+      console.log("finalAvatarUrl =", finalAvatarUrl);
+      console.log("finalValues =", finalValues);
+
+      await updateProfile(finalValues);
+
+      setAvatarFile(null);
+      setStatus("Đã lưu hồ sơ thành công.");
     } catch (error) {
       setStatus(error.message || "Không thể lưu hồ sơ.");
     } finally {
@@ -97,7 +137,7 @@ export default function ProfileForm() {
       <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center">
         <div className="relative h-24 w-24 shrink-0">
           <Image
-            src={values.avatarUrl || user.avatarUrl}
+            src={values.avatar_url || user.avatar_url}
             alt={`Ảnh đại diện của ${user.fullName}`}
             width={96}
             height={96}
@@ -110,7 +150,9 @@ export default function ProfileForm() {
         </div>
 
         <div className="min-w-0">
-          <h2 className="truncate text-xl font-bold text-apple-text">{user.fullName}</h2>
+          <h2 className="truncate text-xl font-bold text-apple-text">
+            {user.fullName}
+          </h2>
           <p className="truncate text-sm text-apple-muted">{user.email}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <span className="rounded-full bg-[#EAF7EA] px-3 py-1 text-xs font-bold text-apple-success">
@@ -185,7 +227,10 @@ export default function ProfileForm() {
           />
 
           <div>
-            <label htmlFor="profile-role" className="mb-1.5 block text-sm font-semibold text-apple-text">
+            <label
+              htmlFor="profile-role"
+              className="mb-1.5 block text-sm font-semibold text-apple-text"
+            >
               Vai trò
             </label>
             <select
@@ -206,7 +251,10 @@ export default function ProfileForm() {
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-apple-muted" role={status ? "status" : undefined}>
+          <p
+            className="text-sm text-apple-muted"
+            role={status ? "status" : undefined}
+          >
             {status}
           </p>
           <button
