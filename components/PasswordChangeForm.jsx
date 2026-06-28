@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { validatePasswordChange } from "@/lib/validation";
 import { changePassword } from "@/services/userService";
+import { useRouter } from "next/navigation";
 import FormInput from "./FormInput";
 
 const initialValues = {
@@ -12,6 +13,7 @@ const initialValues = {
 };
 
 export default function PasswordChangeForm() {
+  const router = useRouter(); //Khởi tạo router
   const [values, setValues] = useState(initialValues);
   const [errors, setErrors] = useState({});
   const [status, setStatus] = useState("");
@@ -41,6 +43,9 @@ export default function PasswordChangeForm() {
       });
       setValues(initialValues);
       setStatus("Đã cập nhật mật khẩu.");
+      setTimeout(() => {
+        router.push("/"); // Thay đổi thành đường dẫn trang login thực tế
+      }, 1500);
     } catch (error) {
       setStatus(error.message || "Không thể cập nhật mật khẩu.");
     } finally {
@@ -96,7 +101,10 @@ export default function PasswordChangeForm() {
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-apple-muted" role={status ? "status" : undefined}>
+          <p
+            className="text-sm text-apple-muted"
+            role={status ? "status" : undefined}
+          >
             {status}
           </p>
           <button

@@ -119,6 +119,12 @@ export async function changePassword({ currentPassword, newPassword }) {
     throw new Error(error.message);
   }
 
+  const { error: signOutError } = await supabase.auth.signOut();
+
+  if (signOutError) {
+    console.error("Lỗi khi đăng xuất:", signOutError);
+  }
+
   return {
     success: true,
   };
