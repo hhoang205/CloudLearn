@@ -11,15 +11,7 @@ import {
 import { getCloudStorageConfig } from "@/services/storageService";
 
 const MAX_FILE_SIZE_MB = 100;
-const STORAGE_CLASSES = [
-
-    "Standard",
-
-    "Private",
-
-    "Public",
-
-];
+const STORAGE_CLASSES = ["Standard", "Private", "Public"];
 
 function formatFileSize(bytes = 0) {
   const size = Number(bytes || 0);
@@ -48,6 +40,14 @@ export default function DocumentManager() {
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
 
+  const [searchTerm, setSearchTerm] = useState("");
+  const filteredDocuments = useMemo(() => {
+    if (!searchTerm.trim()) return documents;
+    return documents.filter((doc) =>
+      doc.name?.toLowerCase().includes(searchTerm.toLowerCase()),
+    );
+  }, [documents, searchTerm]);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -59,9 +59,7 @@ export default function DocumentManager() {
       })
       .catch((loadError) => {
         if (!isMounted) return;
-        setError(
-          loadError.message || "Không thể tải danh sách tài liệu.",
-        );
+        setError(loadError.message || "Không thể tải danh sách tài liệu.");
       });
 
     return () => {
@@ -82,8 +80,8 @@ export default function DocumentManager() {
   function updateMetadata(event) {
     const { name, value } = event.target;
     setMetadata((current) => ({
-    ...current,
-    [name]: value,
+      ...current,
+      [name]: value,
     }));
     setStatus("");
     setError("");
@@ -347,7 +345,7 @@ export default function DocumentManager() {
       </div>
 
       <div className="rounded-[28px] border border-apple-hairline bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h3 className="text-lg font-bold text-apple-text">
               Danh sách tài liệu
@@ -356,9 +354,21 @@ export default function DocumentManager() {
               Metadata mẫu để sau này map với GET /api/documents.
             </p>
           </div>
-          <span className="w-fit rounded-full bg-apple-secondary px-3 py-1 text-xs font-bold text-apple-muted">
-            {documents.length} tệp
-          </span>
+
+          <div className="flex flex-col-reverse items-end gap-3 sm:flex-row sm:items-center">
+            {}
+            <input
+              type="text"
+              placeholder="Tìm kiếm tên tệp..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full min-w-[240px] rounded-full border border-apple-hairline bg-[#F5F5F7] px-4 py-2 text-sm text-apple-text outline-none transition focus:border-apple-primary focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20"
+            />
+            {/* Đổi documents.length thành filteredDocuments.length */}
+            <span className="whitespace-nowrap w-fit rounded-full bg-apple-secondary px-3 py-1 text-xs font-bold text-apple-muted">
+              {filteredDocuments.length} tệp
+            </span>
+          </div>
         </div>
 
         <div className="mt-5 overflow-hidden rounded-3xl border border-apple-hairline">
@@ -371,7 +381,7 @@ export default function DocumentManager() {
             <span className="text-right">Thao tác</span>
           </div>
           <div className="divide-y divide-apple-hairline">
-            {documents.map((doc) => (
+            {filteredDocuments.map((doc) => (
               <article
                 key={doc.id}
                 className="grid gap-3 px-4 py-4 text-sm md:grid-cols-[1.35fr_0.95fr_0.55fr_0.65fr_0.85fr_0.8fr] md:items-center md:gap-4"
@@ -392,13 +402,9 @@ export default function DocumentManager() {
                 </div>
 
                 <div>
-                  <p className="font-semibold text-apple-text">
-                    {doc.course}
-                  </p>
+                  <p className="font-semibold text-apple-text">{doc.course}</p>
 
-                  <p className="mt-1 text-xs text-apple-muted">
-                    {doc.folder}
-                  </p>
+                  <p className="mt-1 text-xs text-apple-muted">{doc.folder}</p>
                 </div>
 
                 <div>
